@@ -1,0 +1,20 @@
+{
+  "name": "nice-psd-to-html",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "cross-env NODE_ENV=development webpack-dev-server --config config/webpack.dev.js"
+  },
+  "keywords": [],
+  "author": "fengshangsheng",
+  "license": "ISC",
+  "devDependencies": {},
+  "engines": {
+    "node": "14.17.5"
+  },
+  "dependencies": {
+    "ejs": "^3.1.8",
+    "psd": "^3.4.0"
+  }
+}
