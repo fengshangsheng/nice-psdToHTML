@@ -2,39 +2,10 @@ const path = require('path');
 const fs = require('fs');
 const ejs = require('ejs');
 
-function toRem(px) {
-  return px / 100 + 'rem';
-}
-
-// 图层偏移
-function stylesOffset(layer) {
-  return `width: ${toRem(layer.get('width'))}
-          height: ${toRem(layer.get('height'))};
-          position: absolute;
-          top: ${toRem(layer.get('top'))};
-          left: ${toRem(layer.get('left'))};`;
-}
-
-// 文字样式
-function styleFont(layer) {
-  const item = layer.get('typeTool');
-  return `font-family: ${item.fonts().join(', ')}; 
-          font-size: ${toRem(item.sizes()[0])}; 
-          color: rgba(${item.colors()[0].join(', ')}); 
-          text-align: ${item.alignment()[0]};`
-}
-
-// 背景图样式
-function styleBg(imgName) {
-  const data = '${' + imgName +'}';
-  return `background-image: url(${data});
-          background-repeat: no-repeat;`
-}
-
 // 根据模板,输出文件
 const writeTemplToFile = (templatePath, targetDir, templateData) => {
   return new Promise((resolve, reject) => {
-    ejs.renderFile(templatePath, templateData, {}, (er, template) => {
+    ejs.renderFile(templatePath, templateData, {}, async (er, template) => {
       if (er) {
         return reject();
       }
@@ -42,8 +13,14 @@ const writeTemplToFile = (templatePath, targetDir, templateData) => {
       let basename = path.basename(templatePath);
       basename = transformFileName(basename);
 
-      fs.writeFileSync(path.resolve(targetDir, basename), template);
+      const outputPath = path.resolve(targetDir, basename)
 
+      console.log('outputPath', outputPath);
+      const hasIn = await fileHasExist(outputPath)
+      if (hasIn) {
+        throw new Error('路径文件已存在:' + outputPath)
+      }
+      fs.writeFileSync(outputPath, template);
       resolve();
     })
   })
@@ -79,11 +56,12 @@ const deleteFolderRecursive = (url) => {
   }
 }
 
+// 文件是否存在
+const fileHasExist = async filePath => await fs.promises.access(filePath).then(() => true).catch(_ => false)
+
+
 module.exports = {
-  toRem,
-  stylesOffset,
-  styleBg,
-  styleFont,
   writeTemplToFile,
-  deleteFolderRecursive
+  deleteFolderRecursive,
+  fileHasExist
 }

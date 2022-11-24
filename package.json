@@ -1,12 +1,18 @@
 {
   "name": "nice-psd-to-html",
   "version": "1.0.0",
-  "description": "",
+  "description": "PSD设计稿转React+Styled-components,并生成.tsx、.js、.png文件",
   "main": "index.js",
-  "scripts": {
-    "start": "cross-env NODE_ENV=development webpack-dev-server --config config/webpack.dev.js"
+  "bin": {
+    "psdtohtml": "index.js"
   },
-  "keywords": [],
+  "scripts": {},
+  "keywords": [
+    "PSD",
+    "psd.js",
+    "react",
+    "react.js"
+  ],
   "author": "fengshangsheng",
   "license": "ISC",
   "devDependencies": {},
@@ -14,7 +20,11 @@
     "node": "14.17.5"
   },
   "dependencies": {
+    "commander": "^9.4.1",
     "ejs": "^3.1.8",
+    "inquirer": "^8.0.0",
+    "module": "^1.2.5",
+    "ora": "^6.1.2",
     "psd": "^3.4.0"
   }
 }
