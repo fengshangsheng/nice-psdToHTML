@@ -8,9 +8,7 @@ const transform = require('./src/fn/transform');
 program.name('psdtohtml')
   .description('PSD设计稿转React+Styled-components,并生成.tsx、.js、.png文件')
   .version(version)
-  .action((str, options) => {
-    input()
-  })
+  .action(input)
 
 
 function input() {

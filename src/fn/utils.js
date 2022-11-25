@@ -34,7 +34,7 @@ const transformFileName = (filename) => {
     case 'style.ejs':
       return 'style.js'
     default:
-      throw new Error('transformFileName:filename');
+      throw new Error('transformFileName:' + filename);
   }
 }
 

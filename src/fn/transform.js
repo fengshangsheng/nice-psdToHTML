@@ -26,8 +26,8 @@ module.exports = async function({psdPath, outputPath}) {
     let dom = filter(tree, 0);
     let css = filter(tree, 1);
     dom = transformDOM(dom);
-    css = `width: ${toRem(root.get('width'))};
-           height: ${toRem(root.get('height'))};
+    css = `width: ${ptTo(root.get('width'))};
+           height: ${ptTo(root.get('height'))};
            position: relative;` + transformCSS(css);
     writeTemplToFile('./../template/style.ejs', outputPath, {
       data: css,
@@ -65,10 +65,11 @@ module.exports = async function({psdPath, outputPath}) {
             item.layer.image.saveAsPng(imgPath);
 
             importImg.push(`import ${key} from './image/${key}.png';`)
-            const style2 = `& > .${key} {
-                                   ${stylesOffset(item)}
-                                   ${styleBg(key)}
-                                 }`;
+            const style2 = `
+            & > .${key} {
+              ${stylesOffset(item)}
+              ${styleBg(key)}
+            }`;
             const dom2 = `<div className="${key}"></div>`;
 
             return [dom2, style2];
@@ -78,24 +79,20 @@ module.exports = async function({psdPath, outputPath}) {
   }
 }
 
-function toRem(px) {
-  return px / 100 + 'rem';
-}
-
 // 图层偏移
 function stylesOffset(layer) {
-  return `width: ${toRem(layer.get('width'))}
-          height: ${toRem(layer.get('height'))};
+  return `width: ${ptTo(layer.get('width'))};
+          height: ${ptTo(layer.get('height'))};
           position: absolute;
-          top: ${toRem(layer.get('top'))};
-          left: ${toRem(layer.get('left'))};`;
+          top: ${ptTo(layer.get('top'))};
+          left: ${ptTo(layer.get('left'))};`;
 }
 
 // 文字样式
 function styleFont(layer) {
   const item = layer.get('typeTool');
   return `font-family: ${item.fonts().join(', ')}; 
-          font-size: ${toRem(item.sizes()[0])}; 
+          font-size: ${ptTo(item.sizes()[0])}; 
           color: rgba(${item.colors()[0].join(', ')}); 
           text-align: ${item.alignment()[0]};`
 }
@@ -152,4 +149,13 @@ function transformCSS(tree) {
     }
     return item;
   }).flat(Infinity).join('')
+}
+
+function ptTo(px){
+  return px;
+  // return toRem(px);
+}
+
+function toRem(px) {
+  return px / 100 + 'rem';
 }
