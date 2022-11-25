@@ -137,7 +137,7 @@ function transformDOM(tree) {
       return `<div className="${item.groupName}">${transformDOM(item.children)}</div>`
     }
     return item;
-  }).flat(Infinity).join('')
+  }).flat(Infinity).join('\n')
 }
 
 // CSS树 => 转换CSS结构
