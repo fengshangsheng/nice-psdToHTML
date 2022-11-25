@@ -7,7 +7,7 @@ const writeTemplToFile = (templatePath, targetDir, templateData) => {
   return new Promise((resolve, reject) => {
     ejs.renderFile(templatePath, templateData, {}, async (er, template) => {
       if (er) {
-        return reject();
+        return reject(er);
       }
 
       let basename = path.basename(templatePath);

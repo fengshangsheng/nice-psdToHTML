@@ -2,14 +2,15 @@ const fs = require("fs");
 const path = require('path');
 const PSD = require('psd');
 const {writeTemplToFile, fileHasExist} = require('./utils');
+const absolutePath = path.resolve(__dirname);
 
-module.exports = async function({psdPath, outputPath}) {
+module.exports = function({psdPath, outputPath}) {
   psdPath = psdPath.trim()
   outputPath = outputPath.trim()
   if (!fileHasExist(psdPath)) {
     throw new Error('文件不存在');
   }
-  if(path.extname(psdPath) !== '.psd'){
+  if (path.extname(psdPath) !== '.psd') {
     throw new Error('文件非PSD类型');
   }
 
@@ -29,11 +30,12 @@ module.exports = async function({psdPath, outputPath}) {
     css = `width: ${ptTo(root.get('width'))};
            height: ${ptTo(root.get('height'))};
            position: relative;` + transformCSS(css);
-    writeTemplToFile('./../template/style.ejs', outputPath, {
+
+    writeTemplToFile(path.resolve(absolutePath, './../template/style.ejs'), outputPath, {
       data: css,
       importImg: importImg.join('\n')
     });
-    writeTemplToFile('./../template/index.ejs', outputPath, {
+    writeTemplToFile(path.resolve(absolutePath, './../template/index.ejs'), outputPath, {
       data: dom
     });
 
@@ -151,7 +153,7 @@ function transformCSS(tree) {
   }).flat(Infinity).join('')
 }
 
-function ptTo(px){
+function ptTo(px) {
   return px;
   // return toRem(px);
 }
