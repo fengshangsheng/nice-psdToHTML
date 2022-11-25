@@ -1,18 +1,16 @@
 const fs = require("fs");
 const path = require('path');
 const PSD = require('psd');
-const {writeTemplToFile, fileHasExist} = require('./utils');
+const {writeTemplToFile, fsExistsSync} = require('./utils');
 const absolutePath = path.resolve(__dirname);
 
 module.exports = function({psdPath, outputPath}) {
-  psdPath = psdPath.trim()
-  outputPath = outputPath.trim()
-  if (!fileHasExist(psdPath)) {
-    throw new Error('文件不存在');
-  }
-  if (path.extname(psdPath) !== '.psd') {
-    throw new Error('文件非PSD类型');
-  }
+  // if (!fsExistsSync(psdPath)) {
+  //   throw new Error('文件不存在');
+  // }
+  // if (path.extname(psdPath) !== '.psd') {
+  //   throw new Error('文件非PSD类型');
+  // }
 
   const psd = PSD.fromFile(psdPath);
   psd.parse();

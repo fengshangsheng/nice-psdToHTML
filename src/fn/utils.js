@@ -16,7 +16,7 @@ const writeTemplToFile = (templatePath, targetDir, templateData) => {
       const outputPath = path.resolve(targetDir, basename)
 
       console.log('outputPath', outputPath);
-      const hasIn = await fileHasExist(outputPath)
+      const hasIn = fsExistsSync(outputPath)
       if (hasIn) {
         throw new Error('路径文件已存在:' + outputPath)
       }
@@ -56,12 +56,32 @@ const deleteFolderRecursive = (url) => {
   }
 }
 
-// 文件是否存在
-const fileHasExist = async filePath => await fs.promises.access(filePath).then(() => true).catch(_ => false)
+// 检测文件或者文件夹存在
+const fsExistsSync = (path, type) => {
+  try {
+    fs.accessSync(path, fs.F_OK);
+  } catch (e) {
+    return false;
+  }
+  if (type === undefined) {
+    return true;
+  }
+
+  console.log('type', type);
+  const stat = fs.lstatSync(path);
+  if (type === 'dir') {
+    return stat.isDirectory();
+  }
+  if (type === 'file') {
+    return stat.isFile();
+  }
+
+}
+
+// // 文件是否存在
+// const fileHasExist = async filePath => await fs.promises.access(filePath).then(() => true).catch(_ => false)
 
 
 module.exports = {
-  writeTemplToFile,
-  deleteFolderRecursive,
-  fileHasExist
+  writeTemplToFile, deleteFolderRecursive, fsExistsSync
 }
