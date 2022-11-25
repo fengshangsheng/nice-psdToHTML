@@ -5,7 +5,7 @@
 > node -v 14.17.5
 1. clone项目到本地`npm clone https://github.com/fengshangsheng/nice-psdToHTML.git`
 2. 安装依赖后link到全局`npm install`  => `npm link`
-3. 任意处打开命令行输入`pastohtml`
+3. 任意处打开命令行输入`psdtohtml`
 ```
 // 1. 任意处打开cmd
 psdtohtml
