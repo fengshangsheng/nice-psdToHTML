@@ -2,18 +2,14 @@ const fs = require("fs");
 const path = require('path');
 const PSD = require('psd');
 const {writeTemplToFile, fsExistsSync} = require('./utils');
-const absolutePath = path.resolve(__dirname);
 
-module.exports = function({psdPath, outputPath}) {
-  // if (!fsExistsSync(psdPath)) {
-  //   throw new Error('文件不存在');
-  // }
-  // if (path.extname(psdPath) !== '.psd') {
-  //   throw new Error('文件非PSD类型');
-  // }
+const absolutePath = path.resolve(__dirname, './../../');
 
+module.exports = function() {
+  const {psdPath, outputPath, frame} = global.CONFIG;
   const psd = PSD.fromFile(psdPath);
   psd.parse();
+
   const root = psd.tree();
   const layers = root.children();
 
@@ -21,87 +17,113 @@ module.exports = function({psdPath, outputPath}) {
 
   function init() {
     const importImg = [];
-    const tree = resolveLayer(layers.reverse());
-    let dom = filter(tree, 0);
-    let css = filter(tree, 1);
-    dom = transformDOM(dom);
-    css = `width: ${ptTo(root.get('width'))};
-           height: ${ptTo(root.get('height'))};
-           position: relative;` + transformCSS(css);
+    const tree = resolveLayer(root);
 
-    writeTemplToFile(path.resolve(absolutePath, './../template/style.ejs'), outputPath, {
-      data: css,
-      importImg: importImg.join('\n')
-    });
-    writeTemplToFile(path.resolve(absolutePath, './../template/index.ejs'), outputPath, {
-      data: dom
-    });
+    const DOM = renderDOM(tree);
+    const CSS = renderCSS(tree);
 
-    function resolveLayer(gourp, preIdx = ['psd']) {
-      return gourp.map((item, idx) => {
-        const keys = [...preIdx, idx];
-        const key = keys.join('_');
-        switch (true) {
-          case item.isGroup():
-            const groupName = ['group', ...preIdx, getGroupIdx(item)].join('_');
-            return {
-              groupName,
-              style: `& > .${groupName} {}`,
-              children: resolveLayer(item._children.reverse(), keys)
-            };
-          case !!item.get('typeTool'):
-            const style = `
-            & > .${key} {
-              ${stylesOffset(item)}
-              ${styleFont(item)}
-            }`;
-            const dom = `<p className="${key}">${item.get('typeTool').textValue}</p>`;
-            return [dom, style];
-          default:
-            if (hasEmptyLayer(item)) {
-              return ['', '']
-            }
-            const imgPath = path.resolve(outputPath, `${key}.png`);
-            item.layer.image.saveAsPng(imgPath);
+    const templPathDOM = path.resolve(absolutePath, `src/template/${frame}/index.ejs`);
+    const templPathCSS = path.resolve(absolutePath, `src/template/${frame}/style.ejs`);
+    const templData = {
+      react: [{DOM}, {CSS, ImportImg: getImportList(tree).join('\n')}],
+      vue: [{DOM, CSS}],
+      default: [{DOM, CSS}],
+    }[frame];
 
-            importImg.push(`import ${key} from './image/${key}.png';`)
-            const style2 = `
-            & > .${key} {
-              ${stylesOffset(item)}
-              ${styleBg(key)}
-            }`;
-            const dom2 = `<div className="${key}"></div>`;
+    writeTemplToFile(templPathDOM, outputPath, templData[0]);
+    ['react'].includes(frame) && writeTemplToFile(templPathCSS, outputPath, templData[1]);
+  }
+}
 
-            return [dom2, style2];
-        }
-      })
+function getImportList(group) {
+  return group.children.map((item) => {
+    const {bgName, children} = item;
+    if (children) {
+      return getImportList(item);
     }
+    if (bgName) {
+      const name = path.basename(bgName, '.png');
+      return `import ${name} from './image/${bgName}';`;
+    }
+    return '';
+  }).flat(Infinity).filter(Boolean)
+}
+
+function resolveLayer(group, classTier = ['psd']) {
+  const className = classTier.join('_');
+  return {
+    className,
+    dom: createDOM(className),
+    style: createCSS(className, group),
+    children: resolveChildrenLayer(
+      group.children(),
+      classTier
+    )
+  }
+
+  function resolveChildrenLayer(children, _classTier) {
+    const publicImgDir = path.resolve(global.CONFIG.outputPath, 'image');
+    const imgDirExists = fsExistsSync(publicImgDir, 'dir')
+    !imgDirExists && fs.mkdirSync(publicImgDir);
+
+    children = children.reverse();
+    return children.map((item, idx) => {
+      const className = _classTier.concat(idx).join('_');
+
+      switch (true) {
+        case item.isGroup():
+          const key = 'group' + getGroupIdx(item);
+          return resolveLayer(item, _classTier.concat(key))
+        case !!item.get('typeTool'):
+          const innerTxt = item.get('typeTool').textValue
+          return {
+            className,
+            dom: createDOM(className, 'p', innerTxt),
+            style: createCSS(className, item)
+          }
+        default:
+          if (hasEmptyLayer(item)) {
+            return undefined
+          }
+          const bgName = `${className}.png`;
+          item.layer.image.saveAsPng(
+            path.resolve(global.CONFIG.outputPath, 'image', bgName)
+          );
+          return {
+            className,
+            bgName,
+            dom: createDOM(className),
+            style: createCSS(className, item)
+          }
+      }
+    }).filter(Boolean);
   }
 }
 
 // 图层偏移
 function stylesOffset(layer) {
-  return `width: ${ptTo(layer.get('width'))};
-          height: ${ptTo(layer.get('height'))};
+  const {toPxFn} = global.CONFIG;
+
+  return `width: ${toPxFn(layer.get('width'))};
+          height: ${toPxFn(layer.get('height'))};
           position: absolute;
-          top: ${ptTo(layer.get('top'))};
-          left: ${ptTo(layer.get('left'))};`;
+          top: ${toPxFn(layer.get('top'))};
+          left: ${toPxFn(layer.get('left'))};`;
 }
 
 // 文字样式
 function styleFont(layer) {
   const item = layer.get('typeTool');
-  return `font-family: ${item.fonts().join(', ')}; 
-          font-size: ${ptTo(item.sizes()[0])}; 
-          color: rgba(${item.colors()[0].join(', ')}); 
-          text-align: ${item.alignment()[0]};`
-}
+  if (!item) {
+    return '';
+  }
 
-// 背景图样式
-function styleBg(imgName) {
-  const data = '${' + imgName + '}';
-  return `background-image: url(${data});
-          background-repeat: no-repeat;`
+  const {toPxFn} = global.CONFIG;
+  return `font-family: ${item.fonts().join(', ')};
+          font-size: ${toPxFn(item.sizes()[0])};
+          line-height: 1;
+          color: rgba(${item.colors()[0].join(', ')});
+          text-align: ${item.alignment()[0]};`
 }
 
 // 是否空图层
@@ -116,46 +138,112 @@ function getGroupIdx(layer) {
 }
 
 // 过滤出 css/html 树
-function filter(list, idx) {
+function filter1(list, idx) {
   return list.map((item) => {
     if (Object.prototype.toString.call(item) === '[object Object]') {
       return {
-        ...item, children: filter(item.children, idx)
+        ...item,
+        children: filter1(item.children, idx)
       };
     }
     return item[idx];
   })
 }
 
-// HTML树 => 转换DOM节点
-function transformDOM(tree) {
-  return tree.flat().map((item) => {
-    if (Object.prototype.toString.call(item) === '[object Object]') {
-      return `<div className="${item.groupName}">${transformDOM(item.children)}</div>`
+function createDOM(className, tag = 'div', innerHTML = '') {
+  const {frame} = global.CONFIG;
+  switch (frame) {
+    case 'react':
+      return `<${tag} className="${className}">${innerHTML}</${tag}>`
+    case 'vue':
+    case 'default':
+      return `<${tag} class="${className}">${innerHTML}</${tag}>`
+    default:
+      throw new Error('createDOM');
+  }
+}
+
+function createCSS(className, layer) {
+  const {frame} = global.CONFIG;
+  switch (frame) {
+    case 'vue':
+    case 'react':
+    case 'default':
+      if (layer.isGroup()) {
+        if (layer.isRoot()) {
+          return `${stylesOffset(layer)}`
+        }
+        return ''
+      }
+      return `${stylesOffset(layer)}
+              ${styleFont(layer)}`;
+    default:
+      throw new Error('createCSS');
+  }
+}
+
+// Tree => 转换DOM节点
+function renderDOM(group) {
+  const {dom, children} = group;
+  const Reg = /\<\/\S+\>$/g;
+
+  const endTag = dom.match(Reg);
+
+  return dom.replace(
+    endTag,
+    children.map((item) => {
+      if (item.children) {
+        return renderDOM(item);
+      }
+      return item.dom;
+    }).flat(Infinity).join('\n')
+  ) + endTag;
+}
+
+// Tree => 转换CSS结构
+function renderCSS(group) {
+  switch (global.CONFIG.frame) {
+    case 'react':
+      return toReact(group, true);
+    case 'vue':
+      return toVue(group, true);
+    case 'default':
+      return toDefault(group);
+      break
+    default:
+      throw new Error('renderCSS:' + global.CONFIG.frame);
+  }
+
+  function toReact(group, isRoot = false) {
+    const {className, style, children, bgName} = group;
+    const selector = isRoot ? `.${className}` : `& > .${className}`;
+
+    return `${selector} {
+      ${style ? style : ''}
+      ${bgName ? `background-image: url(\${${path.basename(bgName, '.png')}});` : ''}
+      ${children ? children.map((item) => toReact(item)).join('\n') : ''}
+    }`
+  }
+
+  function toVue(group, isRoot = false) {
+    const {className, style, children, bgName} = group;
+    const selector = isRoot ? `.${className}` : `& > .${className}`;
+
+    return `${selector} {
+      ${style ? style : ''}
+      ${bgName ? `background-image: url('./image/${bgName}');` : ''}
+      ${children ? children.map((item) => toVue(item)).join('\n') : ''}
+    }`
+  }
+
+  function toDefault(group, levelClass = []) {
+    const {className, style, children, bgName} = group;
+    levelClass = levelClass.concat(className);
+    return `.${levelClass.join(' .')} {
+      ${style ? style : ''}
+      ${bgName ? `background-image: url(./image/${bgName});` : ''}
     }
-    return item;
-  }).flat(Infinity).join('\n')
-}
-
-// CSS树 => 转换CSS结构
-function transformCSS(tree) {
-  return tree.flat().map((item) => {
-    if (Object.prototype.toString.call(item) === '[object Object]') {
-      item.style = item.style.replace('}', '');
-      return `
-          ${item.style}
-          ${transformCSS(item.children)}
-        }`
-    }
-    return item;
-  }).flat(Infinity).join('')
-}
-
-function ptTo(px) {
-  return px + 'px';
-  // return toRem(px);
-}
-
-function toRem(px) {
-  return px / 100 + 'rem';
+    ${children ? children.map((item) => toDefault(item, levelClass)).join('\n') : ''}
+    `;
+  }
 }

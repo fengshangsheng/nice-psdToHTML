@@ -2,6 +2,7 @@
 const path = require('path');
 const {program} = require('commander');
 const inquirer = require('inquirer');
+const nodeEval = require('node-eval');
 const {version} = require('./package.json');
 const transform = require('./src/fn/transform');
 const {fsExistsSync} = require("./src/fn/utils");
@@ -27,13 +28,12 @@ global.CONFIG = {
 }
 
 async function input() {
-  global.CONFIG = await inquirer.prompt([{
+  const data = await inquirer.prompt([{
     type: "input",
     message: "PSD设计稿绝对路径：",
     name: "psdPath",
     filter: (val) => val.trim(),
     validate: (val) => {
-      val = val.trim()
       const bool = fsExistsSync(val, 'file')
       if (!bool) {
         throw  new Error('路径文件错误')
@@ -51,7 +51,6 @@ async function input() {
     name: "outputPath",
     filter: (val) => val.trim(),
     validate: (val) => {
-      val = val.trim()
       const bool = fsExistsSync(val, 'dir')
       if (!bool) {
         throw  new Error('文件夹不存在')
@@ -63,42 +62,48 @@ async function input() {
     type: "list",
     message: "转换的目标模板：",
     name: "frame",
-    prefix: "?",
     default: "React",
-    choices: [
-      "React",
-      "Vue",
-      "Default"
-    ]
+    choices: ["React", "Vue", "Default"],
+    filter: (val) => val.toLowerCase(),
   }, {
     type: "confirm",
     message: "是否响应式？",
-    name: "isMobile",
+    name: "isMobile"
   }, {
     type: "editor",
     message: "像素转换规则函数：",
     name: "toPxFn",
     default: global.CONFIG.toPxFn,
-    when: (answer) => answer.isMobile,
-    filter: (answer) => global.fn,
-    validate: (answer) => {
-      const z = '_ = ' + answer;
+    when: (answer) => {
+      !answer.isMobile && (global.CONFIG.toPxFn = (px) => px + 'px')
+      return answer.isMobile
+    },
+    filter: (answer) => {
       try {
-        const fn = eval(z);
-        throw new Error('fn1',fn);
-        if (fn(100) === undefined) {
-          throw new Error('fn2',fn);
+        eval(answer);
+        return fn;
+      } catch (e) {
+        throw new Error(e);
+      }
+    },
+    validate: (fn) => {
+      try {
+        if(fn(100) === undefined){
+          throw new Error('函数返回值: undefined')
         }
       } catch (e) {
-        throw new Error('语法错误.\n' + answer + e)
+        throw new Error('语法错误:\n' + e)
         return false;
       }
       return true;
     }
   }]);
 
-  console.log('global', global.CONFIG);
-  return
+  global.CONFIG = {
+    ...global.CONFIG,
+    ...data
+  }
+
   transform();
 }
 

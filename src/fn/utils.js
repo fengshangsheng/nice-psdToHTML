@@ -30,7 +30,11 @@ const writeTemplToFile = (templatePath, targetDir, templateData) => {
 const transformFileName = (filename) => {
   switch (filename) {
     case 'index.ejs':
-      return 'index.tsx'
+      return {
+        react: 'index.tsx',
+        vue: 'index.vue',
+        default: 'index.html'
+      }[global.CONFIG.frame]
     case 'style.ejs':
       return 'style.js'
     default:
@@ -67,7 +71,6 @@ const fsExistsSync = (path, type) => {
     return true;
   }
 
-  console.log('type', type);
   const stat = fs.lstatSync(path);
   if (type === 'dir') {
     return stat.isDirectory();
@@ -77,6 +80,7 @@ const fsExistsSync = (path, type) => {
   }
 
 }
+
 
 // // 文件是否存在
 // const fileHasExist = async filePath => await fs.promises.access(filePath).then(() => true).catch(_ => false)
