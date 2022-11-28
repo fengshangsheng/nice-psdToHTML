@@ -1,7 +1,7 @@
 {
   "name": "nice-psd-to-html",
   "version": "1.0.0",
-  "description": "PSD设计稿转React+Styled-components,并生成.tsx、.js、.png文件",
+  "description": ".psd设计稿自动转react、vue、html + .png图片",
   "main": "index.js",
   "bin": {
     "psdtohtml": "index.js"
