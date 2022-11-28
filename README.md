@@ -7,11 +7,11 @@
 > 2. 安装依赖后link到全局`npm install`  => `npm link`
 
 ### 开始
-> 任意处打开命令行并输入：`pastohtml` 
+> 任意处打开命令行并输入：`psdtohtml` 
 > 
-> 按提示依次输入:  
-> `? PSD设计稿绝对路径： F:\WebCode\nice-psdToHTML\111.psd`      
-> `? 转换结果输出目标文件夹的绝对路径: F:\WebCode\nice-psdToHTML`      
+> 按提示依次输入:  (以下路径为示例)
+> `? PSD设计稿绝对路径： F:\aa\bb\111.psd`      
+> `? 转换结果输出目标文件夹的绝对路径: F:\cc\dd\ee`      
 > `? 转换的目标模板： React`      
 > `? 是否响应式？ No`      
 > 
