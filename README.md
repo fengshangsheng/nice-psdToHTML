@@ -1,20 +1,19 @@
 # nice-psdToHTML
-> PSD设计稿自动转React+Styled-components
+> PSD设计稿自动转react、vue、html
 
-### 开始使用
+### 预先准备
 > node -v 14.17.5
-1. clone项目到本地`npm clone https://github.com/fengshangsheng/nice-psdToHTML.git`
-2. 安装依赖后link到全局`npm install`  => `npm link`
-3. 任意处打开命令行输入`psdtohtml`
-```
-// 1. 任意处打开cmd
-psdtohtml
+> 1. clone项目到本地`npm clone https://github.com/fengshangsheng/nice-psdToHTML.git`
+> 2. 安装依赖后link到全局`npm install`  => `npm link`
 
-// 2. 按照提示输入对应的路径后，会自动开始进行PSD转换
-// 如：
-E:\WebCode\mydemo>psdtohtml
-? PSD设计稿绝对路径： Z:\aaaaa\bbbbbb.psd
-? 转换结果输出目标绝对路径:  E:\ccc\ddd\eee\fff
-
-```
+### 开始
+> 任意处打开命令行并输入：`pastohtml` 
+> 
+> 按提示依次输入:  
+> `? PSD设计稿绝对路径： F:\WebCode\nice-psdToHTML\111.psd`      
+> `? 转换结果输出目标文件夹的绝对路径: F:\WebCode\nice-psdToHTML`      
+> `? 转换的目标模板： React`      
+> `? 是否响应式？ No`      
+> 
+> 注：如果你选择的是响应式转换，则会提示一个文本框，输入对应的像素转换函数后回车即可；
  
