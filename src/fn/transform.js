@@ -249,10 +249,11 @@ function renderCSS(group) {
   function toReact(group, isRoot = false) {
     const {className, style, children, bgName} = group;
     const selector = isRoot ? `.${className}` : `& > .${className}`;
-
     return `${selector} {
       ${style ? style : ''}
-      ${bgName ? `background-image: url(\${${path.basename(bgName, '.png')}});` : ''}
+      ${bgName ? `
+        background-image: url(\${${path.basename(bgName, '.png')}});background-size: 100% 100%;
+      ` : ''}
       ${children ? children.map((item) => toReact(item)).join('\n') : ''}
     }`
   }
@@ -263,7 +264,7 @@ function renderCSS(group) {
 
     return `${selector} {
       ${style ? style : ''}
-      ${bgName ? `background-image: url('./image/${bgName}');` : ''}
+      ${bgName ? `background-image: url('./image/${bgName}');background-size: 100% 100%;` : ''}
       ${children ? children.map((item) => toVue(item)).join('\n') : ''}
     }`
   }
@@ -273,7 +274,7 @@ function renderCSS(group) {
     levelClass = levelClass.concat(className);
     return `.${levelClass.join(' .')} {
       ${style ? style : ''}
-      ${bgName ? `background-image: url(./image/${bgName});` : ''}
+      ${bgName ? `background-image: url(./image/${bgName});background-size: 100% 100%;` : ''}
     }
     ${children ? children.map((item) => toDefault(item, levelClass)).join('\n') : ''}
     `;
