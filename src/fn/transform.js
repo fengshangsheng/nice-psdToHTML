@@ -103,12 +103,26 @@ function resolveLayer(group, classTier = ['psd']) {
 // 图层偏移
 function stylesOffset(layer) {
   const {toPxFn} = global.CONFIG;
+  let width = layer.get('width')
+  let height = layer.get('height')
+  let top = layer.get('top')
+  let left = layer.get('left')
 
-  return `width: ${toPxFn(layer.get('width'))};
-          height: ${toPxFn(layer.get('height'))};
+  if (!!layer.get('typeTool')) {
+    let typeTool = layer.get('typeTool')
+    const [positionTop, positionLeft, positionRight, positionBottom] = ['Top ', 'Left', 'Rght', 'Btom'].map(key => typeTool.textData.bounds[key].value);
+    const {text: {transform: {xx, tx, yy, ty}}} = layer.export();
+    width = Math.ceil((positionRight - positionLeft) * xx) * 1.03;
+    height = Math.ceil((positionBottom - positionTop) * yy);
+    left = Math.floor(tx * xx + positionLeft);
+    top = Math.floor(ty * yy + positionTop);
+  }
+
+  return `width: ${toPxFn(width)};
+          height: ${toPxFn(height)};
           position: absolute;
-          top: ${toPxFn(layer.get('top'))};
-          left: ${toPxFn(layer.get('left'))};`;
+          top: ${toPxFn(top)};
+          left: ${toPxFn(left)};`;
 }
 
 // 文字样式
@@ -118,12 +132,30 @@ function styleFont(layer) {
     return '';
   }
 
+
   const {toPxFn} = global.CONFIG;
-  return `font-family: ${item.fonts().join(', ')};
-          font-size: ${toPxFn(item.sizes()[0])};
+  const [positionTop, positionLeft, positionRight, positionBottom] = ['Top ', 'Left', 'Rght', 'Btom'].map(key => item.textData.bounds[key].value);
+  // const {transform: {xx, tx, yy, ty}, font, value} = layer.export();
+  const {text: {transform: {xx, tx, yy, ty}, font, value}} = layer.export();
+
+  const {Leading, Tracking} = item.styles();
+  const fontSize = Math.floor(font.sizes[0] * yy);
+  const fontFamily = font.names.join(', ') || '微软雅黑';
+  const fontColor = font.colors && font.colors.length ? rgbToHex(font.colors[0]) : '#000000';
+  const letterSpacing = Tracking ? Math.round(Tracking[0] * fontSize / 1000) : 0;
+
+  return `font-family: ${fontFamily};
+          font-size: ${toPxFn(fontSize)};
           line-height: 1;
-          color: rgba(${item.colors()[0].join(', ')});
-          text-align: ${item.alignment()[0]};`
+          letter-spacing: ${toPxFn(letterSpacing)};
+          color: ${fontColor};
+          text-align: ${item.alignment()[0]};
+          `
+
+  function rgbToHex([r, g, b]) {
+    const bin = (r << 16 | g << 8 | b).toString(16);
+    return `#${bin.padStart(6, '0')}`;
+  }
 }
 
 // 是否空图层
